@@ -23,7 +23,7 @@ class LargeFileReader:
 
     @classmethod
     def is_valid(cls, obj):
-        return (isintance(obj, cls) and obj.file != None)
+        return (isinstance(obj, cls) and obj.file != None)
 
     @classmethod
     def _process_chunk(cls, chunk):
@@ -65,12 +65,12 @@ class LargeFileReader:
             self.prev_buffer = self.prev_buffer + chunk
 
     def __init__(self, file_name):
+        self.file = None
         try:
             self.file = open(file_name, 'r')
             self.prev_buffer = None
         except IOError as e:
             print(e)
-            self.file = None
         self.eof = False
 
     def reset_file(self, offset=0, from_where=0):

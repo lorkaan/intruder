@@ -23,7 +23,7 @@ class Target:
             self.post_parameters = {}
             if len(tmp) > 1:
                 for kv_pair in tmp[1].split(self.__class__._parameter_seperator):
-                    kv_params = kv.pair.split(self.__class__._key_value_separate)
+                    kv_params = kv_pair.split(self.__class__._key_value_separate)
                     if len(kv_params) >= 2:
                         self.get_parameters[kv_params[0]] = kv_params[1]
                     else:
@@ -46,11 +46,11 @@ class Target:
 
         def get(self, **kwargs):
             payload = self.__class__._current_params(self.get_parameters, **kwargs)
-            return requests.get(current_url, params=payload)
+            return requests.get(self.page, params=payload)
 
         def post(self, get_kwargs={}, **kwargs):
             payload = self.__class__._current_params(self.get_parameters, **get_kwargs)
             post_payload = self.__class__._current_params(self.post_parameters, **kwargs)
-            return requests.post(current_url, params=payload, data=post_payload)    
+            return requests.post(self.page, params=payload, data=post_payload)    
 
 

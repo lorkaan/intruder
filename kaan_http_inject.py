@@ -116,6 +116,11 @@ def read_word_list(filepath, delimiter):
     reader = LargeFileReader(filepath)
     reader.get_chunks(print, delimiter)
 
+def run_get_sniper_inject(param_name, target, filepath, delimiter=None):
+    inject = SniperInject(param_name, target)
+    results = inject.run(filepath, delimiter)
+    print(f"Results are: {results}")
+
 #------- This is the main function that runs everything ------
 
 def main():
@@ -123,6 +128,8 @@ def main():
     parser.add_argument('type', type=int)
     parser.add_argument('--wordlists', '-w', nargs="+")
     parser.add_argument('--delimiter', '-d')
+    parser.add_argument('--position', '-p')
+    parser.add_argument('--target', '-t')
     args = parser.parse_args()
     if args.type >= 0 and args.type < len(inject_type):
         print(inject_type[args.type])
@@ -130,7 +137,7 @@ def main():
         print("No type of that kind")
     print(args.wordlists)
     for item in args.wordlists:
-        read_word_list(item, args.delimiter)
+        run_get_sniper_inject(args.position, args.target, item, args.delimiter)
 
 if __name__ == '__main__':
     main()
