@@ -175,6 +175,8 @@ def main():
 
     attack_type = None
     if args.type >= 0 and args.type < len(inject_type):
+        if args.type == 3:
+            raise NotImplementedError("Cluster Bomb not supported")
         attack_type = inject_type[args.type]
     else:
         raise TypeError("Can not determine which attack type to use")
