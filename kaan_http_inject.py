@@ -1,7 +1,7 @@
 import requests
 from functools import partial
 
-from kaan_lfr import LargeFileReader, TupleFileReader
+from kaan_lfr import LargeFileReader, TupleFileReader, TooSmallReadSizeError
 from kaan_http_target import Target
 
 # CLI Implementation
@@ -25,8 +25,7 @@ class HttpInject:
         else:
             return False
 
-    @classmethod
-    def _valid_chunk(cls, chunk):
+    def _valid_chunk(self, chunk):
         return isinstance(chunk, str)
 
     _wordlist_file_reader = LargeFileReader
@@ -83,7 +82,7 @@ class HttpInject:
                     cur_size = self.__class__._wordlist_file_reader._increase_chunk_size(cur_size)
                     continue
                 for chunk in chunk_map:
-                    if self.__class__._valid_chunk(chunk) and self._attack(chunk): # Looking for a chunk that gives a positive result from the given function
+                    if self._valid_chunk(chunk) and self._attack(chunk): # Looking for a chunk that gives a positive result from the given function
                         return chunk
                     else:
                         continue
@@ -142,11 +141,15 @@ class BatteringRamInject(KeywordInject):
             tmp_params[k] = chunk
         return self._send_request(None, **tmp_params)
 
-class PitchforkInject(KeywordInject):
+class PitchforkInject(MultiPayloadInject):
 
     _wordlist_file_reader = TupleFileReader
 
-class ClusterBombInject(KeywordInject):
+    def _valid_chunk(self, chunk):
+        return isinstance(chunk, tuple) and len(chunk) == len(self.keyword)
+
+
+class ClusterBombInject(MultiPayloadInject):
     """ This is not implemented yet 
     
     Need a way to iterate though every permutation 
@@ -156,25 +159,6 @@ class ClusterBombInject(KeywordInject):
 
     _wordlist_file_reader = TupleFileReader
 
-        
-
-#------- Helper functions used to run the Objects in a Modular manner --------
-
-def read_word_list(filepath, delimiter):
-    """
-        This utilizes the LargeFileReader class to
-        read a word list from a file and apply the 
-        desired functionality for each item in that list
-
-        @param filepath This is the path to the word list file
-    """
-    reader = LargeFileReader(filepath)
-    reader.get_chunks(print, delimiter)
-
-def run_get_sniper_inject(param_name, target, filepath, delimiter=None):
-    inject = SniperInject(param_name, target)
-    results = inject.run(filepath, delimiter)
-    print(f"Results are: {results}")
 
 #------- This is the main function that runs everything ------
 
@@ -200,6 +184,7 @@ def main():
         injector = attack_type(args.position, args.target)
         results = injector.run(item, args.delimiter)
         print(f"Results are: {results}")
+
 
 if __name__ == '__main__':
     main()
