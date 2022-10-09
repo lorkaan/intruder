@@ -25,8 +25,7 @@ class LargeFileReader:
     def is_valid(cls, obj):
         return (isinstance(obj, cls) and obj.file != None)
 
-    @classmethod
-    def _process_chunk(cls, chunk):
+    def _process_chunk(self, chunk):
         """ This processes a Chunk for things like
         handling the protocol for the file type
 
@@ -84,7 +83,7 @@ class LargeFileReader:
 
     def read_chunk(self, size, delimiter=None):
         if self.file == None or self.eof == True:
-            return map(self.__class__._process_chunk, [])
+            return map(self._process_chunk, [])
         if size < 1:
             size = self.__class__._default_read_size
         if delimiter == None:
@@ -100,13 +99,13 @@ class LargeFileReader:
         if len(chunk_info) < size:
             # EOF
             self.eof = True
-            return map(self.__class__._process_chunk, delimited_pieces)
+            return map(self._process_chunk, delimited_pieces)
         if len(delimited_pieces) > 1:
             extra_piece = delimited_pieces.pop(-1) # in case the chunk does not catch the last one 
             # len(extra_piece) is the amount the seek pointer needs to go back by
             self._set_buffer(extra_piece)
             # Note: This returns a map class that has the qualities of an iterator
-            return map(self.__class__._process_chunk, delimited_pieces)
+            return map(self._process_chunk, delimited_pieces)
         else:
             self._set_buffer(delimited_pieces[0])
             # Unable to pull a specific chunk with definite end (delimiter)
@@ -140,3 +139,23 @@ class LargeFileReader:
         if self.file != None:
             self.file.close()
 
+class TupleFileReader(LargeFileReader):
+
+    _default_tuple_delimiter = ":"
+
+    def __init__(self, file_name, tuple_delimiter=None):
+        if not isinstance(tuple_delimiter, str):
+            self.tuple_delimiter = self.__class__._default_tuple_delimiter
+        else:
+            self.tuple_delimiter = tuple_delimiter
+        super().__init__(file_name)
+
+    def _process_chunk(self, chunk):
+        """ This processes a Chunk for things like
+        handling the protocol for the file type
+
+        Does not handle the actual use of each chunk, but
+        rather turning the chunk storage into something useful
+        for the given function to do something with the chunk
+        """
+        return chunk.split(self.tuple_delimiter)

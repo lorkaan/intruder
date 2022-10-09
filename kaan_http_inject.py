@@ -7,8 +7,9 @@ from kaan_http_target import Target
 # CLI Implementation
 import argparse
 
-inject_type = ['Sniper', 'Battering Ram', 'Pitchfork', 'Cluster Bomb']
+inject_type_keys = ['Sniper', 'Battering Ram', 'Pitchfork', 'Cluster Bomb']
 
+inject_type = [SniperInject, BatteringRamInject, PitchforkInject, ClusterBombInject]
 
 class HttpInject:
     """
@@ -25,6 +26,10 @@ class HttpInject:
             return True
         else:
             return False
+
+    @classmethod
+    def _valid_chunk(cls, chunk):
+        return isinstance(chunk, str)
 
     _wordlist_file_reader = LargeFileReader
 
@@ -80,7 +85,7 @@ class HttpInject:
                     cur_size = self.__class__._wordlist_file_reader._increase_chunk_size(cur_size)
                     continue
                 for chunk in chunk_map:
-                    if self._attack(chunk): # Looking for a chunk that gives a positive result from the given function
+                    if self.__class__._valid_chunk(chunk) and self._attack(chunk): # Looking for a chunk that gives a positive result from the given function
                         return chunk
                     else:
                         continue
@@ -88,18 +93,83 @@ class HttpInject:
         else:
             raise IOError("Can not read from {0}".format(filepath))
 
-class SniperInject(HttpInject):
+class KeywordInject(HttpInject):
+
+    @classmethod
+    def _valid_keywords(cls, keyword):
+        return isinstance(keyword, str)
 
     def __init__(self, keyword, target_url, post_flag=False, **post_kwargs):
-        if not isinstance(keyword, str):
+        if not self.__class__._valid_keywords(keyword):
             raise TypeError("keyword param needs to be a string")
         self.keyword = keyword
         super().__init__(target_url=target_url, post_flag=post_flag, **post_kwargs)
+
+class MultiKeywordInject(KeywordInject):
+
+    @classmethod
+    def _valid_keywords(cls, keyword):
+        if isinstance(keyword, list) and len(keyword) > 0:
+            for k in keyword:
+                if isinstance(k, str):
+                    continue
+                else:
+                    return False
+            return True
+        else:
+            return False
+
+class MultiPayloadInject(MultiKeywordInject):
+
+    @classmethod
+    def _valid_chunk(cls, chunk):
+        if isinstance(chunk, list) and len(chunk) > 0:
+            for c in chunk:
+                if isinstance(c, str):
+                    continue
+                else:
+                    return False
+            return True
+        else:
+            return False
+
+    def _attack(self, chunk):
+        tmp_params = {}
+        if len(chunk) == len(self.keyword):
+            for i in range(len(chunk)):
+                tmp_params[self.keyword[i]] = chunk[i]
+            return self._send_request(None, **tmp_params)
+        else:
+            return False
+
+class SniperInject(KeywordInject):
 
     def _attack(self, chunk):
         tmp_params = {}
         tmp_params[self.keyword] = chunk
         return self._send_request(None, **tmp_params)
+
+class BatteringRamInject(MuliKeywordInject):
+
+    def _attack(self, chunk):
+        tmp_params = {}
+        for k in self.keyword:
+            tmp_params[k] = chunk
+        return self._send_request(None, **tmp_params)
+
+class PitchforkInject(MultiPayloadInject):
+
+    _wordlist_file_reader = TupleFileReader
+
+class ClusterBombInject(MultiPayloadInject):
+    """ This is not implemented yet 
+    
+    Need a way to iterate though every permutation 
+    held in a large file. Might have to actually store 
+    the contents
+    """
+
+    _wordlist_file_reader = TupleFileReader
 
         
 
@@ -128,16 +198,20 @@ def main():
     parser.add_argument('type', type=int)
     parser.add_argument('--wordlists', '-w', nargs="+")
     parser.add_argument('--delimiter', '-d')
-    parser.add_argument('--position', '-p')
+    parser.add_argument('--position', '-p', nargs='+')
     parser.add_argument('--target', '-t')
     args = parser.parse_args()
+
+    attack_type = None
     if args.type >= 0 and args.type < len(inject_type):
-        print(inject_type[args.type])
-    else:
-        print("No type of that kind")
-    print(args.wordlists)
-    for item in args.wordlists:
-        run_get_sniper_inject(args.position, args.target, item, args.delimiter)
+        attack_type = inject_type[args.type]
+
+    if isinstance(attack_type, HttpInject):
+        for item in args.wordlists:
+            print(f"Word List: {item}")
+            injector = attack_type(args.position, args.target)
+            results = injector.run(item, args.delimiter)
+            print(f"Results are: {results}")
 
 if __name__ == '__main__':
     main()
