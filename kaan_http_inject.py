@@ -1,15 +1,13 @@
 import requests
 from functools import partial
 
-from kaan_lfr import LargeFileReader
+from kaan_lfr import LargeFileReader, TupleFileReader
 from kaan_http_target import Target
 
 # CLI Implementation
 import argparse
 
 inject_type_keys = ['Sniper', 'Battering Ram', 'Pitchfork', 'Cluster Bomb']
-
-inject_type = [SniperInject, BatteringRamInject, PitchforkInject, ClusterBombInject]
 
 class HttpInject:
     """
@@ -94,18 +92,7 @@ class HttpInject:
             raise IOError("Can not read from {0}".format(filepath))
 
 class KeywordInject(HttpInject):
-
-    @classmethod
-    def _valid_keywords(cls, keyword):
-        return isinstance(keyword, str)
-
-    def __init__(self, keyword, target_url, post_flag=False, **post_kwargs):
-        if not self.__class__._valid_keywords(keyword):
-            raise TypeError("keyword param needs to be a string")
-        self.keyword = keyword
-        super().__init__(target_url=target_url, post_flag=post_flag, **post_kwargs)
-
-class MultiKeywordInject(KeywordInject):
+    """ There is a better way to do this than using Keyword and MultiKeyword """
 
     @classmethod
     def _valid_keywords(cls, keyword):
@@ -119,19 +106,14 @@ class MultiKeywordInject(KeywordInject):
         else:
             return False
 
-class MultiPayloadInject(MultiKeywordInject):
+    def __init__(self, keyword, target_url, post_flag=False, **post_kwargs):
+        if not self.__class__._valid_keywords(keyword):
+            raise TypeError("keyword param needs to be a string")
+        self.keyword = keyword
+        super().__init__(target_url=target_url, post_flag=post_flag, **post_kwargs)
 
-    @classmethod
-    def _valid_chunk(cls, chunk):
-        if isinstance(chunk, list) and len(chunk) > 0:
-            for c in chunk:
-                if isinstance(c, str):
-                    continue
-                else:
-                    return False
-            return True
-        else:
-            return False
+
+class MultiPayloadInject(KeywordInject):
 
     def _attack(self, chunk):
         tmp_params = {}
@@ -145,11 +127,14 @@ class MultiPayloadInject(MultiKeywordInject):
 class SniperInject(KeywordInject):
 
     def _attack(self, chunk):
-        tmp_params = {}
-        tmp_params[self.keyword] = chunk
-        return self._send_request(None, **tmp_params)
+        if len(self.keyword) > 0:
+            tmp_params = {}
+            tmp_params[self.keyword[0]] = chunk
+            return self._send_request(None, **tmp_params)
+        else:
+            raise TypeError("SniperInject requires a parameter to work on")
 
-class BatteringRamInject(MuliKeywordInject):
+class BatteringRamInject(KeywordInject):
 
     def _attack(self, chunk):
         tmp_params = {}
@@ -157,11 +142,11 @@ class BatteringRamInject(MuliKeywordInject):
             tmp_params[k] = chunk
         return self._send_request(None, **tmp_params)
 
-class PitchforkInject(MultiPayloadInject):
+class PitchforkInject(KeywordInject):
 
     _wordlist_file_reader = TupleFileReader
 
-class ClusterBombInject(MultiPayloadInject):
+class ClusterBombInject(KeywordInject):
     """ This is not implemented yet 
     
     Need a way to iterate though every permutation 
@@ -193,6 +178,8 @@ def run_get_sniper_inject(param_name, target, filepath, delimiter=None):
 
 #------- This is the main function that runs everything ------
 
+inject_type = [SniperInject, BatteringRamInject, PitchforkInject, ClusterBombInject]
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('type', type=int)
@@ -205,13 +192,14 @@ def main():
     attack_type = None
     if args.type >= 0 and args.type < len(inject_type):
         attack_type = inject_type[args.type]
+    else:
+        raise TypeError("Can not determine which attack type to use")
 
-    if isinstance(attack_type, HttpInject):
-        for item in args.wordlists:
-            print(f"Word List: {item}")
-            injector = attack_type(args.position, args.target)
-            results = injector.run(item, args.delimiter)
-            print(f"Results are: {results}")
+    for item in args.wordlists:
+        # These is a better way to do this
+        injector = attack_type(args.position, args.target)
+        results = injector.run(item, args.delimiter)
+        print(f"Results are: {results}")
 
 if __name__ == '__main__':
     main()
