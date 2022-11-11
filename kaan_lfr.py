@@ -159,3 +159,4 @@ class TupleFileReader(LargeFileReader):
         for the given function to do something with the chunk
         """
         return tuple(chunk.split(self.tuple_delimiter))
+
