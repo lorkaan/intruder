@@ -106,6 +106,7 @@ class KeywordInject(HttpInject):
             return False
 
     def __init__(self, keyword, target_url, post_flag=False, **post_kwargs):
+        print(keyword)
         if not self.__class__._valid_keywords(keyword):
             raise TypeError("keyword param needs to be a string")
         self.keyword = keyword
