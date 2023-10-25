@@ -90,6 +90,41 @@ class HttpInject:
         else:
             raise IOError("Can not read from {0}".format(filepath))
 
+class MultiFileHttpInject(HttpInject):
+    """ This is just a test class to test out new functionality 
+    without significantly altering the other HttpInject class
+    """
+
+    @classmethod
+    def _add_reader(cls, filepath):
+        tmp_reader = self.__class__._wordlist_file_reader(filepath)
+        if not self.__class__._wordlist_file_reader.is_valid(tmp_reader):
+            raise TypeError("Can not access file {0}".format(filepath))
+        else:
+            return tmp_reader
+        
+    
+
+    def run(self, filepath, delimiter=None):
+        readers = []
+        tmp_reader = None
+        if isinstance(filepath, str):
+            readers.append(self.__class__._add_reader(filepath))
+        elif isinstance(filepath, list):
+            for fpath in filepath:
+                readers.append(self.__class__._add_reader(fpath))
+        delimiters = []
+        if isinstance(delimiter, list) and len(delimiter) > 0:
+            for i in range(len(readers)):
+                if i < len(delimiters):
+                    delimiters.append(delimiter[i])
+                else:
+                    delimiters.append(None)
+        else:
+            delimiters = [delimiter] * len(readers)
+        
+
+
 class KeywordInject(HttpInject):
     """ There is a better way to do this than using Keyword and MultiKeyword """
 
@@ -159,6 +194,8 @@ class ClusterBombInject(MultiPayloadInject):
     """
 
     _wordlist_file_reader = TupleFileReader
+
+#------- These are the functions used to turn this system into a third party library
 
 
 #------- This is the main function that runs everything ------

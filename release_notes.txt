@@ -1,0 +1,2 @@
+
+- You can not do a Clusterbomb Injection using the same file.
