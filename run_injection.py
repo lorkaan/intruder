@@ -13,6 +13,15 @@ class ParseKwargs(argparse.Action):
             key, value = value.split('=')
             getattr(namespace, self.dest)[key] = value
 
+def setup_wordlists(wordlist_files):
+    if isinstance(wordlist_files, list) and len(wordlist_files) > 0:
+        if len(wordlist_files) == 1:
+            return wordlist_files[0]
+        else:
+            return []
+    else:
+        raise TypeError("Expected a non-empty list, got {0}".format(type(wordlist_files)))
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('type', type=int)
@@ -29,16 +38,18 @@ def main():
         keyword_param_type = keyword_param[args.type]
     else:
         raise TypeError("Can not determine which attack type to use")
-
-    if attack_type == ClusterBombInjection:
-        pass    # To Do: got to get the wordlists in place
+    
+    wlists = setup_wordlists(args.wordlists)
 
     # Ingnore Post Flag for now
-    if isinstance(attack_type, HttpInjection):
-        attk = attack_type(args.get)
+    if issubclass(attack_type, HttpInjection):
+        attk = attack_type(args.target)
         if keyword_param_type == None:
             raise Exception("This attack type {0} has been disabled".format(args.type))
-        
+        else:
+            for key, _ in args.get.items():
+                print(attk.run(key, wlists, args.delimiter))
+
 
     
         

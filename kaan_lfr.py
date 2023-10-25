@@ -64,12 +64,14 @@ class LargeFileReader:
             self.prev_buffer = self.prev_buffer + chunk
 
     def __init__(self, file_name):
+        print("Opening file {0}".format(file_name))
         self.file = None
         try:
             self.file = open(file_name, 'r')
             self.prev_buffer = None
         except IOError as e:
             print(e)
+            raise e
         self.eof = False
 
     def reset_file(self, offset=0, from_where=0):

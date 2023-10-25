@@ -20,7 +20,7 @@ class MultiFileHandler(object):
                 file_handler_class = self.__class__._default_file_handler_class
         if isinstance(file_names, str) and num_handlers > 0:
             for i in range(num_handlers):
-                self.handlers.append(file_handler_class(file_names[i]))  
+                self.handlers.append(file_handler_class(file_names))  
         elif isinstance(file_names, list):
             for file_name in file_names:
                 self.handlers.append(file_handler_class(file_name))
