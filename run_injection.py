@@ -27,7 +27,7 @@ def main():
     parser.add_argument('type', type=int)
     parser.add_argument('--wordlists', '-w', nargs="+")
     parser.add_argument('--delimiter', '-d')
-    parser.add_argument('--get', '-g', nargs='*', action=ParseKwargs)
+    parser.add_argument('--get', '-g', nargs='*')
     parser.add_argument("--post", '-p', nargs='*', action=ParseKwargs)
     parser.add_argument('--target', '-t')
     args = parser.parse_args()
@@ -47,7 +47,7 @@ def main():
         if keyword_param_type == None:
             raise Exception("This attack type {0} has been disabled".format(args.type))
         else:
-            for key, _ in args.get.items():
+            for key in args.get:
                 print(attk.run(key, wlists, args.delimiter))
 
 
