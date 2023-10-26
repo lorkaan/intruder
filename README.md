@@ -35,7 +35,7 @@ This will create a virtual environment and download the required packages
 `pipenv shell` if not already done to change your terminal into the virtual evnironment created during setup
 
 Assuming that the [Test Server](https://www.github.com/lorkaan/testenvintruder) project is running,an Example command is the following:
-`python run_injection.py 0 --wordlists ./tests/wordlist.txt --delimiter \n --target http://127.0.0.1:5000/gtest?name=pear --get name`
+`python run_injection.py 0 --wordlists ./example/wordlist.txt --delimiter \n --target http://127.0.0.1:5000/gtest?name=pear --get name`
 
 Notes:
 - `0` is the type of attack, in this case its a Sniper attack (only one query parameter is to be tested)
